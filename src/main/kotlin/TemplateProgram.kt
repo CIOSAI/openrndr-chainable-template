@@ -5,27 +5,40 @@ import org.openrndr.draw.loadImage
 import org.openrndr.draw.tint
 import kotlin.math.cos
 import kotlin.math.sin
+import ChainableAnimation.Chainable
+import org.openrndr.animatable.easing.Easing
 
 fun main() = application {
     configure {
-        width = 768
-        height = 576
+        width = 600
+        height = 400
     }
 
     program {
-        val image = loadImage("data/images/pm5544.png")
-        val font = loadFont("data/fonts/default.otf", 64.0)
+        val ligmaBall = object : Chainable() {
+            var x = width/4.0
 
+            override fun assign() { //override the abstract method and Chainable will handle the into and outof
+                ::x.animate(-width/4.0, 1000, Easing.QuartInOut)
+                ::x.complete()
+                delay(300)
+                end(//end(::var.animate()) after this animation it will trigger the follow animation
+                ::x.animate(width/4.0, 1000, Easing.QuartInOut)
+                )
+            }
+        }
+
+        ligmaBall.chain(ligmaBall::start) //put the function reference of the following animation here
+        ligmaBall.hold_for(1400) //delay at the start
+        ligmaBall.start() //start the animation
         extend {
-            drawer.drawStyle.colorMatrix = tint(ColorRGBa.WHITE.shade(0.2))
-            drawer.image(image)
+            drawer.clear(ColorRGBa.BLACK)
+
+            ligmaBall.updateAnimation()//call every frame? i'm not sure how the basic one works either
 
             drawer.fill = ColorRGBa.PINK
-            drawer.circle(cos(seconds) * width / 2.0 + width / 2.0, sin(0.5 * seconds) * height / 2.0 + height / 2.0, 140.0)
-
-            drawer.fontMap = font
-            drawer.fill = ColorRGBa.WHITE
-            drawer.text("OPENRNDR", width / 2.0, height / 2.0)
+            drawer.stroke = null
+            drawer.circle(width/2.0+ligmaBall.x, height/2.0, 40.0)
         }
     }
 }
